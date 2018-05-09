@@ -10,6 +10,7 @@ namespace Kmeans
     internal struct Point
     {
         internal double Norm { get; set; }
+        //internal Dictionary<ushort, double> Values;
         internal ConcurrentDictionary<ushort, double> Values;
 
         internal void CalculateNorm()
@@ -101,6 +102,7 @@ namespace Kmeans
                         _dataset[i] = new Point
                         {
                             Values = new ConcurrentDictionary<ushort, double>()
+                            //Values = new ConcurrentDictionary<ushort, double>()
                         };
                         userPos[user] = i;
                         pos = i;
@@ -164,10 +166,11 @@ namespace Kmeans
 
         private void NewCentroids()
         {
-            var newCentroids = new Point [_k];
-            for (var i = 0; i < newCentroids.Length; i++)
+            for (var i = 0; i < _centroids.Length; i++)
             {
-                newCentroids[i].Values = new ConcurrentDictionary<ushort, double>();
+                _centroids[i].Values = new ConcurrentDictionary<ushort, double>();
+                //_centroids[i].Values = new ConcurrentDictionary<ushort, double>();
+                _centroids[i].Norm = 0.0;
             }
 
             var count = new int[_k];
@@ -178,18 +181,32 @@ namespace Kmeans
 
                 foreach (var pair in _dataset[i].Values)
                 {
-                    newCentroids[ci].Values.AddOrUpdate(pair.Key, pair.Value, (key, oldValue) => oldValue + pair.Value);
+//                    if (_centroids[ci].Values.ContainsKey(pair.Key))
+//                    {
+//                        _centroids[ci].Values[pair.Key] += pair.Value;
+//                    }
+//                    else
+//                    {
+//                        _centroids[ci].Values[pair.Key] = pair.Value;
+//                    }
+                    _centroids[ci].Values.AddOrUpdate(pair.Key, pair.Value, (key, oldValue) => oldValue + pair.Value);
                 }
 
                 Interlocked.Increment(ref count[ci]);
             });
 
-            for (int i = 0; i < newCentroids.Length; i++)
+            for (int i = 0; i < _centroids.Length; i++)
             {
-                foreach (var cKey in newCentroids[i].Values.Keys)
+                var keys = new List<ushort>(_centroids[i].Values.Keys);
+                foreach (var cKey in keys)
                 {
-                    newCentroids[i].Values[cKey] /= count[i];
+                    _centroids[i].Values[cKey] /= count[i];
                 }
+            }
+
+            for (int i = 0; i < _centroids.Length; i++)
+            {
+                _centroids[i].CalculateNorm();
             }
         }
 
