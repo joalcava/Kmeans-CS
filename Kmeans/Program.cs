@@ -1,13 +1,12 @@
 ﻿using System;
-using Kmeans;
 
 namespace Kmeans
 {
-    class Program
+    public static class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            var kmeans = new KMeans(20, 0.01, "combined_data_1.txt");
+            var kmeans = new KMeans(20, 0.01, "/home/joalcava/Documentos/combined_data_1.txt");
             kmeans.Init();
             
             Console.WriteLine("Press <ENTER>.");
