@@ -6,11 +6,12 @@ namespace Kmeans
     {
         public static void Main(string[] args)
         {
-            var kmeans = new KMeans(20, 0.01, "/home/joalcava/Documentos/combined_data_1.txt");
+            var kmeans = new KMeans(5, 0.1, "/home/joalcava/Documentos/combined_data_1.txt");
             kmeans.Init();
-            
-            Console.WriteLine("Press <ENTER>.");
-            Console.ReadKey();
+
+            Console.WriteLine("DONE.");
+//            Console.WriteLine("Press <ENTER>.");
+//            Console.ReadKey();
         }
     }
 }
