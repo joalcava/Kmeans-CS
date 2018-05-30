@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Data;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +8,7 @@ namespace Kmeans
 {
     public class KMeans
     {
+        private readonly object syncRoot = new object();
         private const int _dsSize = 470758;
         private readonly short _k;
         private readonly double _error;
@@ -144,7 +142,7 @@ namespace Kmeans
             }
 
             file.Close();
-            Console.WriteLine($"\nNumero de peliculas: {movie}");
+            Console.WriteLine($"\nNumero de películas: {movie}");
             Console.WriteLine($"Numero de usuarios: {usersIndexes.Count}\n\n");
         }
 
@@ -174,8 +172,13 @@ namespace Kmeans
                 ushort centroid;
                 double distance;
                 (centroid, distance) = ClosestCentroidTo(pointIndex);
-                _clustering[centroid].Add(_ds[pointIndex]);
-                InterlockedDoubleAdd(ref ssd, distance);
+
+                // Zona critica, para no perder datos.
+                lock (syncRoot)
+                {
+                    _clustering[centroid].Add(_ds[pointIndex]);
+                    ssd += distance;
+                }
             });
 
             return ssd;
@@ -229,6 +232,9 @@ namespace Kmeans
             {
                 for (var j = 0; j < _clustering[i].Count; j++)
                 {
+                    // No es necesario implementar una zona critica ya que
+                    // el tamano del array es estatico y el diccionario solo es
+                    // escrito por un hilo a la vez
                     if (_clustering[i][j] is null)
                     {
                         _clustering[i][j] = new Dictionary<ushort, double>();
