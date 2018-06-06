@@ -8,18 +8,19 @@ namespace Kmeans
 {
     public class KMeans
     {
-        private readonly object syncRoot = new object();
         private const int _dsSize = 470758;
-        private readonly short _k;
-        private readonly double _error;
+        private readonly object syncRoot = new object();
         private readonly string _fileName;
         private readonly IDictionary<ushort, double>[] _ds;
-        private readonly IDictionary<ushort, double>[] _centroids;
         private readonly double[] _dsNorms;
-        private readonly double[] _centroidsNorms;
-        
-        private readonly List<IDictionary<ushort, double>>[] _clustering;
 
+        private IDictionary<ushort, double>[] _centroids;
+        private double[] _centroidsNorms;
+        private List<IDictionary<ushort, double>>[] _clustering;
+
+        private short _k;
+        private double _error;
+        private bool DataSetIsLoaded = false;
         
         public KMeans(short k, double error, string fileName)
         {
@@ -43,6 +44,19 @@ namespace Kmeans
             InitializeClustering();
             
             _ds.Initialize();
+            _dsNorms.Initialize();
+            _centroidsNorms.Initialize();
+            _centroids.Initialize();
+        }
+
+        private void SetK(short k)
+        {
+            _k = k;
+            _centroids = new IDictionary<ushort, double>[_k];            
+            _centroidsNorms = new double[_k];
+            
+            _clustering = new List<IDictionary<ushort, double>>[_k];
+            InitializeClustering();
             _dsNorms.Initialize();
             _centroidsNorms.Initialize();
             _centroids.Initialize();
@@ -91,19 +105,23 @@ namespace Kmeans
             });
         }
         
-        public void Init()
+        public double Init(short k = 0, double epsilon = 0)
         {
-            LoadNetflixDataset();
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            
-            CalculateDsNorms();
+            if (k != 0) SetK(k);
+            if (epsilon != 0) _error = epsilon;
+            if (!DataSetIsLoaded)
+            {
+                LoadNetflixDataset();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                CalculateDsNorms();
+            }
             
             SetCentroidsRandomly();
             CalculateCentroidsNorms();
-
-            IterateUntilConvergence();
+            var result = IterateUntilConvergence();
             PrintResults();
+            return result;
         }
  
         private void LoadNetflixDataset()
@@ -144,6 +162,7 @@ namespace Kmeans
             file.Close();
             Console.WriteLine($"\nNumero de películas: {movie}");
             Console.WriteLine($"Numero de usuarios: {usersIndexes.Count}\n\n");
+            DataSetIsLoaded = true;
         }
 
         private void SetCentroidsRandomly()
@@ -227,7 +246,7 @@ namespace Kmeans
                 _centroids[i] = new Dictionary<ushort, double>();
             }
             _centroidsNorms.Initialize();
-
+           
             Parallel.For(0, _clustering.Length, i =>
             {
                 for (var j = 0; j < _clustering[i].Count; j++)
@@ -265,7 +284,7 @@ namespace Kmeans
             CalculateCentroidsNorms();
         }
 
-        private void IterateUntilConvergence()
+        private double IterateUntilConvergence()
         {
             var iter = 0;
             var ssd = 0.0;
@@ -283,6 +302,8 @@ namespace Kmeans
                 PrintResults();
                 iter++;
             } while (d > _error);
+
+            return ssd;
         }
 
         private void PrintResults()

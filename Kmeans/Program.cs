@@ -6,12 +6,23 @@ namespace Kmeans
     {
         public static void Main(string[] args)
         {
-            var kmeans = new KMeans(5, 0.1, "C:/combined_data_1.txt");
+            var filePath = "";
+            short k = 5;
+            try
+            {
+                filePath = args[0];
+                k = Convert.ToInt16(args[1]);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Debe indicar el directorio del dataset");
+                Console.WriteLine("Debe indicar el valor de K");
+                throw;
+            }
+            var kmeans = new KMeans(k, 0.1, filePath);
             kmeans.Init();
 
             Console.WriteLine("DONE.");
-//            Console.WriteLine("Press <ENTER>.");
-//            Console.ReadKey();
         }
     }
 }
